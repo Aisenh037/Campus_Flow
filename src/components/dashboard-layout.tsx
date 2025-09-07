@@ -7,6 +7,7 @@ import {
   CalendarCheck,
   School,
   Menu,
+  Briefcase,
 } from "lucide-react";
 import { UserNav } from "@/components/user-nav";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ interface DashboardLayoutProps {
 const navItems = [
   { href: "/", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/students", icon: Users, label: "Students" },
+  { href: "/teachers", icon: Briefcase, label: "Teachers" },
   { href: "/courses", icon: BookCopy, label: "Courses" },
   { href: "/scheduler", icon: CalendarCheck, label: "AI Scheduler" },
 ];

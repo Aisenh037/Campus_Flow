@@ -5,10 +5,16 @@ export interface Student {
   email: string;
 }
 
+export interface Teacher {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface Course {
   id: string;
   name: string;
-  instructor: string;
+  instructorId: string;
   description: string;
 }
 

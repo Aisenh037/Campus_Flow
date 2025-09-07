@@ -16,9 +16,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import DashboardLayout from "@/components/dashboard-layout";
-import { courses, enrollments } from "@/lib/mock-data";
+import { courses, enrollments, teachers } from "@/lib/mock-data";
 
 export default function CoursesPage() {
+  const getInstructorName = (instructorId: string) => {
+    const teacher = teachers.find((t) => t.id === instructorId);
+    return teacher ? teacher.name : "N/A";
+  };
+
   return (
     <DashboardLayout>
       <div className="flex items-center">
@@ -52,7 +57,7 @@ export default function CoursesPage() {
               {courses.map((course) => (
                 <TableRow key={course.id}>
                   <TableCell className="font-medium">{course.name}</TableCell>
-                  <TableCell>{course.instructor}</TableCell>
+                  <TableCell>{getInstructorName(course.instructorId)}</TableCell>
                   <TableCell>
                     {enrollments.filter((e) => e.courseId === course.id).length}
                   </TableCell>
