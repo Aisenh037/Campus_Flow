@@ -21,8 +21,8 @@ import { courses, enrollments, teachers } from "@/lib/mock-data";
 export default function CoursesPage() {
   const getInstructorName = (instructorId: string) => {
     const teacher = teachers.find((t) => t.id === instructorId);
-    return teacher ? teacher.name : "N/A";
-  };
+    return teacher ? `${teacher.firstName} ${teacher.lastName}` : 'N/A';
+  }
 
   return (
     <DashboardLayout>

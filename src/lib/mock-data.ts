@@ -9,10 +9,10 @@ export const students: Student[] = [
 ];
 
 export const teachers: Teacher[] = [
-    { id: 'T1', name: 'Dr. Alan Turing', email: 'alan.turing@example.com' },
-    { id: 'T2', name: 'Dr. Ada Lovelace', email: 'ada.lovelace@example.com' },
-    { id: 'T3', name: 'Dr. Vincent van Gogh', email: 'vincent.vangogh@example.com' },
-    { id: 'T4', name: 'Dr. Marie Curie', email: 'marie.curie@example.com' },
+  { id: 'T1', firstName: 'Alan', lastName: 'Turing', email: 'alan.turing@example.com' },
+  { id: 'T2', firstName: 'Ada', lastName: 'Lovelace', email: 'ada.lovelace@example.com' },
+  { id: 'T3', firstName: 'Vincent', lastName: 'van Gogh', email: 'vincent.vangogh@example.com' },
+  { id: 'T4', firstName: 'Marie', lastName: 'Curie', email: 'marie.curie@example.com' },
 ];
 
 export const courses: Course[] = [
