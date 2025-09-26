@@ -1,3 +1,7 @@
+
+'use client';
+
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -24,14 +28,37 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { TeacherForm, TeacherFormValues } from "@/components/teacher-form";
+import { useToast } from "@/hooks/use-toast";
 
 export default function TeachersPage() {
+  const [isAddTeacherDialogOpen, setIsAddTeacherDialogOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleAddTeacher = (data: TeacherFormValues) => {
+    console.log("New teacher data:", data);
+    // Here you would typically add the new teacher to your state or database
+    toast({
+      title: "Teacher Added",
+      description: `${data.firstName} ${data.lastName} has been successfully added.`,
+    });
+    setIsAddTeacherDialogOpen(false);
+  };
+
   return (
     <DashboardLayout>
       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl font-headline">Teachers</h1>
         <div className="ml-auto flex items-center gap-2">
-          <Button size="sm" className="h-8 gap-1">
+          <Button size="sm" className="h-8 gap-1" onClick={() => setIsAddTeacherDialogOpen(true)}>
             <PlusCircle className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
               Add Teacher
@@ -91,6 +118,21 @@ export default function TeachersPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={isAddTeacherDialogOpen} onOpenChange={setIsAddTeacherDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add New Teacher</DialogTitle>
+            <DialogDescription>
+              Enter the details of the new teacher. Click save when you're done.
+            </DialogDescription>
+          </DialogHeader>
+          <TeacherForm
+            onSubmit={handleAddTeacher}
+            onCancel={() => setIsAddTeacherDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
