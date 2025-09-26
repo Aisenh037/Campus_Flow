@@ -8,6 +8,7 @@ import {
   School,
   Menu,
   Briefcase,
+  FileText,
 } from "lucide-react";
 import { UserNav } from "@/components/user-nav";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ const navItems = [
   { href: "/students", icon: Users, label: "Students" },
   { href: "/teachers", icon: Briefcase, label: "Teachers" },
   { href: "/courses", icon: BookCopy, label: "Courses" },
+  { href: "/assignments", icon: FileText, label: "Assignments" },
   { href: "/scheduler", icon: CalendarCheck, label: "AI Scheduler" },
 ];
 

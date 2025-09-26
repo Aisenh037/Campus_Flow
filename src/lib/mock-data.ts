@@ -1,4 +1,4 @@
-import type { Student, Course, Enrollment, Teacher } from '@/types';
+import type { Student, Course, Enrollment, Teacher, Assignment } from '@/types';
 
 export const students: Student[] = [
   { id: '1', firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com' },
@@ -31,4 +31,12 @@ export const enrollments: Enrollment[] = [
   { studentId: '4', courseId: 'C4' },
   { studentId: '5', courseId: 'C1' },
   { studentId: '5', courseId: 'C4' },
+];
+
+export const assignments: Assignment[] = [
+  { id: 'A1', courseId: 'C1', title: 'Binary Search Tree Implementation', description: 'Implement a binary search tree in Python.', dueDate: '2024-10-15' },
+  { id: 'A2', courseId: 'C2', title: 'Proof of Fermat\'s Last Theorem', description: 'Just kidding. Solve the provided problem set on number theory.', dueDate: '2024-10-20' },
+  { id: 'A3', courseId: 'C3', title: 'Renaissance Art Essay', description: 'Write a 5-page essay on the impact of the Renaissance on modern art.', dueDate: '2024-11-01' },
+  { id: 'A4', courseId: 'C4', title: 'Schrödinger\'s Cat Thought Experiment', description: 'Explain the paradox and its implications in a 2-page paper.', dueDate: '2024-10-25' },
+  { id: 'A5', courseId: 'C1', title: 'API Design Project', description: 'Design a RESTful API for a simple blog.', dueDate: '2024-11-05' },
 ];
