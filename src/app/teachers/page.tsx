@@ -35,13 +35,25 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { TeacherForm, TeacherFormValues } from "@/components/teacher-form";
 import { useToast } from "@/hooks/use-toast";
 
 export default function TeachersPage() {
   const [isAddTeacherDialogOpen, setIsAddTeacherDialogOpen] = useState(false);
   const [isEditTeacherDialogOpen, setIsEditTeacherDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
+  const [deletingTeacher, setDeletingTeacher] = useState<Teacher | null>(null);
   const { toast } = useToast();
 
   const handleAddTeacher = (data: TeacherFormValues) => {
@@ -69,6 +81,26 @@ export default function TeachersPage() {
     setIsEditTeacherDialogOpen(false);
     setEditingTeacher(null);
   };
+
+  const handleDeleteClick = (teacher: Teacher) => {
+    setDeletingTeacher(teacher);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deletingTeacher) {
+      console.log("Deleting teacher:", deletingTeacher);
+      // Here you would typically delete the teacher from your state or database
+      toast({
+        title: "Teacher Deleted",
+        description: `${deletingTeacher.firstName} ${deletingTeacher.lastName} has been deleted.`,
+        variant: "destructive",
+      });
+      setIsDeleteDialogOpen(false);
+      setDeletingTeacher(null);
+    }
+  };
+
 
   return (
     <DashboardLayout>
@@ -125,7 +157,12 @@ export default function TeachersPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => handleEditClick(teacher)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem>Delete</DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteClick(teacher)}
+                          className="text-destructive"
+                        >
+                          Delete
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -159,7 +196,7 @@ export default function TeachersPage() {
               <DialogDescription>
                 Update the details of the teacher. Click save when you're done.
               </DialogDescription>
-            </DialogHeader>
+            </Header>
             <TeacherForm
               onSubmit={handleEditTeacher}
               onCancel={() => {
@@ -170,6 +207,26 @@ export default function TeachersPage() {
             />
           </DialogContent>
         </Dialog>
+      )}
+
+      {deletingTeacher && (
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the
+                teacher and remove their data from our servers.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setDeletingTeacher(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteConfirm}>
+                Continue
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </DashboardLayout>
   );
