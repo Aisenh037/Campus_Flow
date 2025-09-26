@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from "react";
@@ -21,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, MoreHorizontal } from "lucide-react";
 import DashboardLayout from "@/components/dashboard-layout";
 import { teachers, courses } from "@/lib/mock-data";
+import type { Teacher } from "@/types";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,13 +34,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { TeacherForm, TeacherFormValues } from "@/components/teacher-form";
 import { useToast } from "@/hooks/use-toast";
 
 export default function TeachersPage() {
   const [isAddTeacherDialogOpen, setIsAddTeacherDialogOpen] = useState(false);
+  const [isEditTeacherDialogOpen, setIsEditTeacherDialogOpen] = useState(false);
+  const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
   const { toast } = useToast();
 
   const handleAddTeacher = (data: TeacherFormValues) => {
@@ -51,6 +52,22 @@ export default function TeachersPage() {
       description: `${data.firstName} ${data.lastName} has been successfully added.`,
     });
     setIsAddTeacherDialogOpen(false);
+  };
+  
+  const handleEditClick = (teacher: Teacher) => {
+    setEditingTeacher(teacher);
+    setIsEditTeacherDialogOpen(true);
+  };
+
+  const handleEditTeacher = (data: TeacherFormValues) => {
+    console.log("Updated teacher data:", data);
+    // Here you would typically update the teacher in your state or database
+    toast({
+      title: "Teacher Updated",
+      description: `${data.firstName} ${data.lastName}'s details have been successfully updated.`,
+    });
+    setIsEditTeacherDialogOpen(false);
+    setEditingTeacher(null);
   };
 
   return (
@@ -107,7 +124,7 @@ export default function TeachersPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditClick(teacher)}>Edit</DropdownMenuItem>
                         <DropdownMenuItem>Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -133,6 +150,27 @@ export default function TeachersPage() {
           />
         </DialogContent>
       </Dialog>
+
+      {editingTeacher && (
+        <Dialog open={isEditTeacherDialogOpen} onOpenChange={setIsEditTeacherDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Edit Teacher</DialogTitle>
+              <DialogDescription>
+                Update the details of the teacher. Click save when you're done.
+              </DialogDescription>
+            </DialogHeader>
+            <TeacherForm
+              onSubmit={handleEditTeacher}
+              onCancel={() => {
+                setIsEditTeacherDialogOpen(false);
+                setEditingTeacher(null);
+              }}
+              initialValues={editingTeacher}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </DashboardLayout>
   );
 }
