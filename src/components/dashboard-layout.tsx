@@ -10,6 +10,7 @@ import {
   Briefcase,
   FileText,
   GraduationCap,
+  Bot,
 } from "lucide-react";
 import { UserNav } from "@/components/user-nav";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ const navItems = [
   { href: "/assignments", icon: FileText, label: "Assignments" },
   { href: "/grades", icon: GraduationCap, label: "Grades" },
   { href: "/scheduler", icon: CalendarCheck, label: "AI Scheduler" },
+  { href: "/chatbot", icon: Bot, label: "AI Chatbot" },
 ];
 
 const NavLink = ({
