@@ -39,6 +39,11 @@ import { cn } from '@/lib/utils';
 // We can't use 'pdf-parse/lib/pdf-parse.js' directly in the browser.
 // A browser-compatible library or a different approach is needed.
 // For this example, we will simulate the text extraction.
+import pdfParse from "pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js"
+if (typeof window !== "undefined") {
+  pdfParse.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
+}
+
 
 const formSchema = z.object({
   studentId: z.string({ required_error: 'Please select a student.' }),
@@ -84,17 +89,35 @@ export default function SubmissionPage() {
   };
 
   const extractTextFromFile = (file: File) => {
-    if (file.type === 'application/pdf') {
-      // PDF text extraction is complex on the client-side and would require a library
-      // like pdf.js. For this demo, we'll just show a placeholder.
-      toast({
-        title: 'PDF Detected',
-        description: 'Text extraction from PDFs is for demonstration. Full implementation would require a client-side PDF parsing library.',
-      });
-      setValue('submissionText', `Extracted text from ${file.name} would appear here.`);
+    const reader = new FileReader();
 
+    if (file.type === 'application/pdf') {
+      reader.onload = async (e) => {
+        try {
+          const typedarray = new Uint8Array(e.target?.result as ArrayBuffer);
+          const pdf = await pdfParse.getDocument(typedarray).promise;
+          let text = '';
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            text += content.items.map((item: any) => item.str).join(' ');
+          }
+          setValue('submissionText', text);
+          toast({
+            title: 'PDF Content Extracted',
+            description: 'The text from the PDF has been successfully extracted.',
+          });
+        } catch (error) {
+          console.error('Failed to parse PDF:', error);
+          toast({
+            variant: 'destructive',
+            title: 'PDF Parsing Failed',
+            description: 'Could not extract text from the PDF. The file might be corrupted or in an unsupported format.',
+          });
+        }
+      };
+      reader.readAsArrayBuffer(file);
     } else if (file.type === 'text/plain') {
-      const reader = new FileReader();
       reader.onload = (e) => {
         const text = e.target?.result as string;
         setValue('submissionText', text);
