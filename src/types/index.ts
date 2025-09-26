@@ -31,3 +31,11 @@ export interface Assignment {
   description: string;
   dueDate: string;
 }
+
+export interface Grade {
+  id: string;
+  studentId: string;
+  assignmentId: string;
+  mark: number;
+  comments?: string;
+}

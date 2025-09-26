@@ -1,4 +1,4 @@
-import type { Student, Course, Enrollment, Teacher, Assignment } from '@/types';
+import type { Student, Course, Enrollment, Teacher, Assignment, Grade } from '@/types';
 
 export const students: Student[] = [
   { id: '1', firstName: 'John', lastName: 'Doe', email: 'john.doe@example.com' },
@@ -39,4 +39,12 @@ export const assignments: Assignment[] = [
   { id: 'A3', courseId: 'C3', title: 'Renaissance Art Essay', description: 'Write a 5-page essay on the impact of the Renaissance on modern art.', dueDate: '2024-11-01' },
   { id: 'A4', courseId: 'C4', title: 'Schrödinger\'s Cat Thought Experiment', description: 'Explain the paradox and its implications in a 2-page paper.', dueDate: '2024-10-25' },
   { id: 'A5', courseId: 'C1', title: 'API Design Project', description: 'Design a RESTful API for a simple blog.', dueDate: '2024-11-05' },
+];
+
+export const grades: Grade[] = [
+    { id: 'G1', studentId: '1', assignmentId: 'A1', mark: 85 },
+    { id: 'G2', studentId: '2', assignmentId: 'A1', mark: 92 },
+    { id: 'G3', studentId: '1', assignmentId: 'A2', mark: 78, comments: 'Good effort, but review theorems.' },
+    { id: 'G4', studentId: '2', assignmentId: 'A3', mark: 95, comments: 'Excellent analysis.' },
+    { id: 'G5', studentId: '4', assignmentId: 'A4', mark: 88 },
 ];
