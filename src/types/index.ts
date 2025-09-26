@@ -1,3 +1,5 @@
+import { GradeSubmissionInputSchema, GradeSubmissionOutputSchema } from "./grading";
+
 export interface Student {
   id: string;
   firstName: string;
@@ -25,7 +27,7 @@ export interface Enrollment {
 }
 
 export interface Assignment {
-  id: string;
+  id:string;
   courseId: string;
   title: string;
   description: string;
@@ -39,3 +41,6 @@ export interface Grade {
   mark: number;
   comments?: string;
 }
+
+export type GradeSubmissionInput = Zod.infer<typeof GradeSubmissionInputSchema>;
+export type GradeSubmissionOutput = Zod.infer<typeof GradeSubmissionOutputSchema>;

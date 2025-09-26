@@ -34,12 +34,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/dashboard-layout';
 import { assignments, students } from '@/lib/mock-data';
-import { Loader2, UploadCloud } from 'lucide-react';
+import { Loader2, UploadCloud, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 // We can't use 'pdf-parse/lib/pdf-parse.js' directly in the browser.
 // A browser-compatible library or a different approach is needed.
 // For this example, we will simulate the text extraction.
 import pdfParse from "pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js"
+import { gradeSubmission, GradeSubmissionOutput } from '@/ai/flows/ai-grading';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 if (typeof window !== "undefined") {
   pdfParse.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
 }
@@ -52,7 +54,7 @@ const formSchema = z.object({
     typeof window === 'undefined'
       ? z.any()
       : z.instanceof(FileList).refine(files => files.length > 0, 'File is required.'),
-  submissionText: z.string().optional(),
+  submissionText: z.string().min(1, 'Please upload a file with text content.'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -60,13 +62,14 @@ type FormValues = z.infer<typeof formSchema>;
 export default function SubmissionPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [aiResult, setAiResult] = useState<GradeSubmissionOutput | null>(null);
   const { toast } = useToast();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
   });
 
-  const { register, setValue, watch } = form;
+  const { register, setValue, watch, getValues } = form;
   const fileList = watch('file');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,6 +92,7 @@ export default function SubmissionPage() {
   };
 
   const extractTextFromFile = (file: File) => {
+    setAiResult(null);
     const reader = new FileReader();
 
     if (file.type === 'application/pdf') {
@@ -102,7 +106,7 @@ export default function SubmissionPage() {
             const content = await page.getTextContent();
             text += content.items.map((item: any) => item.str).join(' ');
           }
-          setValue('submissionText', text);
+          setValue('submissionText', text, { shouldValidate: true });
           toast({
             title: 'PDF Content Extracted',
             description: 'The text from the PDF has been successfully extracted.',
@@ -120,7 +124,7 @@ export default function SubmissionPage() {
     } else if (file.type === 'text/plain') {
       reader.onload = (e) => {
         const text = e.target?.result as string;
-        setValue('submissionText', text);
+        setValue('submissionText', text, { shouldValidate: true });
          toast({
           title: 'Text File Loaded',
           description: 'The content of the text file has been loaded.',
@@ -139,27 +143,32 @@ export default function SubmissionPage() {
 
   async function onSubmit(data: FormValues) {
     setIsLoading(true);
-    console.log('Submission Data:', {
-        ...data,
-        file: data.file?.[0]?.name,
-    });
-    // Here you would typically send the data.submissionText to an AI flow
+    setAiResult(null);
+
+    const selectedAssignment = assignments.find(a => a.id === data.assignmentId);
+    if (!selectedAssignment) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Selected assignment not found.' });
+        setIsLoading(false);
+        return;
+    }
+
     try {
-        // Example: await gradeSubmission({ text: data.submissionText });
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate AI call
-        toast({
-            title: 'Submission Received',
-            description: "The assignment has been submitted and is ready for AI processing.",
+        const result = await gradeSubmission({
+            assignmentTitle: selectedAssignment.title,
+            assignmentDescription: selectedAssignment.description,
+            submissionText: data.submissionText,
         });
-        form.reset();
-        setValue('file', new DataTransfer().files); // Clear file input
-        setValue('submissionText', '');
+        setAiResult(result);
+        toast({
+            title: 'AI Analysis Complete',
+            description: "The AI has provided a grade and feedback.",
+        });
     } catch (error) {
        console.error('Error submitting for grading:', error);
        toast({
         variant: 'destructive',
-        title: 'Submission Failed',
-        description: 'There was an error processing your submission.',
+        title: 'AI Analysis Failed',
+        description: 'There was an error processing your submission with the AI.',
       });
     } finally {
         setIsLoading(false);
@@ -168,142 +177,193 @@ export default function SubmissionPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex items-center">
-        <h1 className="text-lg font-semibold md:text-2xl font-headline">Submit Assignment</h1>
+      <div className="flex items-center mb-4">
+        <h1 className="text-lg font-semibold md:text-2xl font-headline">AI-Powered Submission Analysis</h1>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Assignment Submission</CardTitle>
-          <CardDescription>
-            Select the student, assignment, and upload the submission file.
-          </CardDescription>
-        </CardHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <CardContent className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                 <FormField
-                    control={form.control}
-                    name="studentId"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Student</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                            <SelectTrigger>
-                            <SelectValue placeholder="Select a student" />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            {students.map(student => (
-                            <SelectItem key={student.id} value={student.id}>
-                                {student.firstName} {student.lastName}
-                            </SelectItem>
-                            ))}
-                        </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <CardTitle>Assignment Submission</CardTitle>
+            <CardDescription>
+              Select the student, assignment, and upload the submission file for AI grading.
+            </CardDescription>
+          </CardHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              <CardContent className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <FormField
+                      control={form.control}
+                      name="studentId"
+                      render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Student</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                              <SelectTrigger>
+                              <SelectValue placeholder="Select a student" />
+                              </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                              {students.map(student => (
+                              <SelectItem key={student.id} value={student.id}>
+                                  {student.firstName} {student.lastName}
+                              </SelectItem>
+                              ))}
+                          </SelectContent>
+                          </Select>
+                          <FormMessage />
+                      </FormItem>
+                      )}
+                  />
+                  <FormField
+                      control={form.control}
+                      name="assignmentId"
+                      render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Assignment</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                              <SelectTrigger>
+                              <SelectValue placeholder="Select an assignment" />
+                              </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                              {assignments.map(assignment => (
+                              <SelectItem key={assignment.id} value={assignment.id}>
+                                  {assignment.title}
+                              </SelectItem>
+                              ))}
+                          </SelectContent>
+                          </Select>
+                          <FormMessage />
+                      </FormItem>
+                      )}
+                  />
+                </div>
                 <FormField
-                    control={form.control}
-                    name="assignmentId"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Assignment</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                            <SelectTrigger>
-                            <SelectValue placeholder="Select an assignment" />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            {assignments.map(assignment => (
-                            <SelectItem key={assignment.id} value={assignment.id}>
-                                {assignment.title}
-                            </SelectItem>
-                            ))}
-                        </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-              </div>
-              <FormField
-                control={form.control}
-                name="file"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Submission File</FormLabel>
-                    <FormControl>
-                       <div
-                        className={cn(
-                            "relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted/75 transition-colors",
-                            { 'border-primary bg-primary/10': dragActive }
-                        )}
-                        onDragEnter={() => setDragActive(true)}
-                        onDragLeave={() => setDragActive(false)}
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={handleDrop}
-                        >
-                        <UploadCloud className="w-10 h-10 text-muted-foreground mb-2" />
-                        <p className="mb-2 text-sm text-muted-foreground">
-                            <span className="font-semibold">Click to upload</span> or drag and drop
-                        </p>
-                        <p className="text-xs text-muted-foreground">PDF or TXT files</p>
-                        <Input
-                            {...register('file')}
-                            type="file"
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            accept=".pdf,.txt"
-                            onChange={handleFileChange}
-                        />
-                        </div>
-                    </FormControl>
-                     {fileList && fileList.length > 0 && (
-                        <div className="text-sm text-muted-foreground pt-2">
-                            Selected file: {fileList[0].name}
-                        </div>
-                     )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
                   control={form.control}
-                  name="submissionText"
+                  name="file"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Extracted Text (for AI Processing)</FormLabel>
+                      <FormLabel>Submission File</FormLabel>
                       <FormControl>
-                        <Textarea
-                          placeholder="Text from your file will appear here..."
-                          className="min-h-[150px] font-mono text-xs"
-                          readOnly
-                          {...field}
-                        />
+                        <div
+                          className={cn(
+                              "relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted/75 transition-colors",
+                              { 'border-primary bg-primary/10': dragActive }
+                          )}
+                          onDragEnter={() => setDragActive(true)}
+                          onDragLeave={() => setDragActive(false)}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={handleDrop}
+                          >
+                          <UploadCloud className="w-10 h-10 text-muted-foreground mb-2" />
+                          <p className="mb-2 text-sm text-muted-foreground">
+                              <span className="font-semibold">Click to upload</span> or drag and drop
+                          </p>
+                          <p className="text-xs text-muted-foreground">PDF or TXT files</p>
+                          <Input
+                              {...register('file')}
+                              type="file"
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                              accept=".pdf,.txt"
+                              onChange={handleFileChange}
+                          />
+                          </div>
                       </FormControl>
-                      <FormDescription>
-                        This text will be sent to the AI for grading or analysis.
-                      </FormDescription>
+                      {fileList && fileList.length > 0 && (
+                          <div className="text-sm text-muted-foreground pt-2">
+                              Selected file: {fileList[0].name}
+                          </div>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-            </CardContent>
-            <CardFooter>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                Submit for AI Analysis
-              </Button>
-            </CardFooter>
-          </form>
-        </Form>
-      </Card>
+                <FormField
+                    control={form.control}
+                    name="submissionText"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Extracted Text</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Text from your file will appear here..."
+                            className="min-h-[150px] font-mono text-xs"
+                            readOnly
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+              </CardContent>
+              <CardFooter>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Submit for AI Analysis
+                </Button>
+              </CardFooter>
+            </form>
+          </Form>
+        </Card>
+        <div className="lg:col-span-2">
+            {isLoading && (
+               <Card className="h-full">
+                  <CardContent className="flex flex-col items-center justify-center h-full">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                    <p className="text-lg font-semibold text-muted-foreground">AI is grading the submission...</p>
+                    <p className="text-sm text-muted-foreground">This may take a moment.</p>
+                  </CardContent>
+               </Card>
+            )}
+            {aiResult && !isLoading && (
+                <Card className="h-full">
+                    <CardHeader>
+                        <CardTitle>AI Grading Results</CardTitle>
+                         <CardDescription>
+                            The AI's suggested grade and feedback.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {aiResult.isPlagiarized && (
+                            <Alert variant="destructive">
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertTitle>Plagiarism Warning</AlertTitle>
+                                <AlertDescription>
+                                The AI detected that this submission may not be original. Please review carefully.
+                                </AlertDescription>
+                            </Alert>
+                        )}
+                        <div className="flex items-baseline justify-center text-center p-6 bg-muted rounded-lg">
+                           <p className="text-6xl font-bold text-primary">{aiResult.grade}</p>
+                           <p className="text-2xl text-muted-foreground">/ 100</p>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold mb-2">Feedback:</h4>
+                            <div className="p-4 bg-muted/50 rounded-md whitespace-pre-wrap font-body text-sm">
+                                <p>{aiResult.feedback}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+            {!aiResult && !isLoading && (
+              <Card className="h-full">
+                <CardContent className="flex items-center justify-center h-full">
+                    <div className="text-center text-muted-foreground">
+                        <p className="font-semibold">Awaiting Submission</p>
+                        <p className="text-sm">AI analysis results will appear here.</p>
+                    </div>
+                </CardContent>
+              </Card>
+            )}
+        </div>
+      </div>
     </DashboardLayout>
   );
 }
