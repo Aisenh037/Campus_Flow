@@ -11,6 +11,7 @@ import {
   FileText,
   GraduationCap,
   Bot,
+  Upload,
 } from "lucide-react";
 import { UserNav } from "@/components/user-nav";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ const navItems = [
   { href: "/courses", icon: BookCopy, label: "Courses" },
   { href: "/assignments", icon: FileText, label: "Assignments" },
   { href: "/grades", icon: GraduationCap, label: "Grades" },
+  { href: "/submission", icon: Upload, label: "Submit Assignment" },
   { href: "/scheduler", icon: CalendarCheck, label: "AI Scheduler" },
   { href: "/chatbot", icon: Bot, label: "AI Chatbot" },
 ];
